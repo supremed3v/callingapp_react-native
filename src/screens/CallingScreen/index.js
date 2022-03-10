@@ -24,6 +24,7 @@ export default function CallingScreen() {
 
   const voximplant = Voximplant.getInstance()
   const call = useRef(incomingCall)
+  const endpoint = useRef(null)
 
 
 
@@ -75,6 +76,8 @@ export default function CallingScreen() {
 
     const answerCall = async () =>{
       subscribeToCallEvents()
+      endpoint.current = call.current.getEndpoints()[0]
+      subscribeToEndpointEvent()
       call.current.answerCall(callSettings)
     }
 
@@ -94,7 +97,20 @@ export default function CallingScreen() {
       call.current.on(Voximplant.CallEvents.LocalVideoStreamAdded, callEvent =>{
         setLocalVideoStreamId(callEvent.videoStream.id)
       })
+      call.current.on(Voximplant.CallEvents.EndpointAdded, callEvent =>{
+        endpoint.current = callEvent.endpoint;
+        subscribeToEndpointEvent()
+      })
     }
+    const subscribeToEndpointEvent = async () =>{
+      endpoint.current.on(
+        Voximplant.EndpointEvents.RemoteVideoStreamAdded,
+        endpointEvent=>{
+          setRemoteVideoStreamId(endpointEvent.videoStream.id)
+        }
+      )
+    }
+
     const showError = (reason) =>{
       Alert.alert("Call Failed", `Reason: ${reason}`, [
         {
@@ -128,6 +144,11 @@ export default function CallingScreen() {
         <Ionicons name="chevron-back" color="white" size={30} />
       </Pressable>
 
+
+    <Voximplant.VideoView 
+    videoStreamId={remoteStreamVideoId}
+    style={styles.remoteVideo}
+    />
     <Voximplant.VideoView 
     videoStreamId={localStreamVideoId}
     style={styles.localVideo}
@@ -172,5 +193,24 @@ const styles = StyleSheet.create({
 
   localVideo: {
     
+    width: 100,
+    height: 150,
+    backgroundColor: '#FFFF6E',
+    borderRadius: 10,
+
+    position: 'absolute',
+    right: 10,
+    top: 100,
+  },
+
+  remoteVideo: {
+    backgroundColor: '#7b4e80',
+    borderRadius: 10,
+
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 100,
   }
 });
