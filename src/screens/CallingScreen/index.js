@@ -12,11 +12,15 @@ const permissions = [
 
 export default function CallingScreen() {
   const [permissionGranted, setPermissionGranted] = useState(false)
+  const [callStatus, setCallStatus] = useState("Initializing...")
+  const [ localStreamVideoId,setLocalVideoStreamId] = useState('')
+  const [ remoteStreamVideoId,setRemoteVideoStreamId] = useState('')
+
+
   const navigation = useNavigation();
   const route = useRoute();
   const {user, call: incomingCall, isIncomingCall} = route?.params;
 
-  const [callStatus, setCallStatus] = useState("Initializing...")
 
   const voximplant = Voximplant.getInstance()
   const call = useRef(incomingCall)
@@ -69,6 +73,11 @@ export default function CallingScreen() {
       subscribeToCallEvents()
     }
 
+    const answerCall = async () =>{
+      subscribeToCallEvents()
+      call.current.answerCall(callSettings)
+    }
+
     const subscribeToCallEvents = () => {
       call.current.on(Voximplant.CallEvents.Failed, (callEvent)=>{
         showError(callEvent.reason)
@@ -81,6 +90,9 @@ export default function CallingScreen() {
       })
       call.current.on(Voximplant.CallEvents.Disconnected, callEvent =>{
         navigation.navigate("Contacts")
+      })
+      call.current.on(Voximplant.CallEvents.LocalVideoStreamAdded, callEvent =>{
+        setLocalVideoStreamId(callEvent.videoStream.id)
       })
     }
     const showError = (reason) =>{
@@ -115,6 +127,12 @@ export default function CallingScreen() {
       <Pressable onPress={goBack} style={styles.backButton}>
         <Ionicons name="chevron-back" color="white" size={30} />
       </Pressable>
+
+    <Voximplant.VideoView 
+    videoStreamId={localStreamVideoId}
+    style={styles.localVideo}
+    />
+
       <View style={styles.cameraPreview}>
         <Text style={styles.name}>{user?.user_display_name}</Text>
         <Text style={styles.contactNumber}>{callStatus}</Text>
@@ -151,4 +169,8 @@ const styles = StyleSheet.create({
     top: 20,
     left: 10,
   },
+
+  localVideo: {
+    
+  }
 });
